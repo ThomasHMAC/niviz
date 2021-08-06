@@ -7,7 +7,7 @@ name: Build-Docs
 # 3. "dev" documentation should only be pushed when development documentation is updated
 
 on:
-  # Rule 1 
+  # Rule 1
   release:
     types: [published]
   # Rule 2
@@ -79,6 +79,7 @@ jobs:
           ls ./docs/build/html | grep -v dev | xargs -I {} rm -rfv ./docs/build/html/{}
 
       - name: Upload build results
+        if:  ${{ !env.ACT }}
         uses: actions/upload-artifact@v2
         with:
           name: multidocs
@@ -110,7 +111,7 @@ jobs:
           git fetch --prune --unshallow --tags
           LATEST_TAG=$(git describe --abbrev=0 --tags)
           echo "<meta http-equiv='refresh' content='0; url=./${LATEST_TAG}/index.html' />" > ./docs/build/html/index.html
-          touch ./docs/build/html/.nojekyll 
+          touch ./docs/build/html/.nojekyll
 
       # A clean push only on releases
       - name: Publish to gh-pages
