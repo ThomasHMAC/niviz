@@ -13,7 +13,7 @@ import niworkflows.interfaces.report_base as nrc
 from nipype.interfaces.base import File, traits, InputMultiPath, Directory
 from traits.trait_types import BaseInt
 from nipype.interfaces.mixins import reporting
-from niworkflows.viz.utils import cuts_from_bbox, compose_view
+from niworkflows.viz.utils import cuts_from_bbox, compose_view, extract_svg
 
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
@@ -21,6 +21,8 @@ import nilearn.image
 import nilearn.plotting as nplot
 import nibabel as nib
 import numpy as np
+
+from svgutils.transform import fromstring
 
 from ..node_factory import register_interface
 import niviz.surface
@@ -30,6 +32,103 @@ ReportCapable concrete classes for generating reports as side-effects
 
 if TYPE_CHECKING:
     from nipype.interfaces.base.support import Bunch
+
+# TODO: Create Identity Mixin
+
+
+# Basic set of visualizations
+class _IAnatInputSpecRPT(nrc._SVGReportCapableInputSpec):
+    nii = File(exists=True,
+               usedefault=False,
+               resolve=True,
+               desc="Anatomical Image to view",
+               mandatory=True)
+
+
+class _IAnatOutputSpecRPT(reporting.ReportCapableOutputSpec):
+    pass
+
+
+class IAnatRPT(reporting.ReportCapableInterface):
+
+    input_spec = _IAnatInputSpecRPT
+    output_spec = _IAnatOutputSpecRPT
+
+    def _run_interface(self, runtime: Bunch) -> Bunch:
+        """Instantiation of abstract method, does nothing
+
+        Args:
+            runtime: Nipype runtime object
+
+        Returns:
+            runtime: Resultant runtime object (unchanged)
+
+        """
+        return runtime
+
+    def _generate_report(self):
+
+        data = nilearn.image.load(self.inputs.nii)
+        bbox_nii = nilearn.image.threshold_img(data, 1e-3)
+        cuts = cuts_from_bbox(bbox_nii, cuts=7)
+
+        svgs = []
+        for d in ("z", "x", "y"):
+            plot_params = {"display_mode": d, "cut_coords": cuts[d]}
+            display = nplot.plot_anat(data, **plot_params)
+            svg = extract_svg(display)
+            svg = svg.replace("figure_1", f"anatomical-{d}")
+            svgs.append(fromstring(svg))
+            display.close()
+
+        compose_view(svgs, fg_svgs=None, out_file=self._out_report)
+
+
+class _IFuncInputSpecRPT(nrc._SVGReportCapableInputSpec):
+    nii = File(exists=True,
+               usedefault=False,
+               resolve=True,
+               desc="Functional Image to view",
+               mandatory=True)
+
+
+class _IFuncOutputSpecRPT(reporting.ReportCapableOutputSpec):
+    pass
+
+
+class IFuncRPT(reporting.ReportCapableInterface):
+
+    input_spec = _IFuncInputSpecRPT
+    output_spec = _IFuncOutputSpecRPT
+
+    def _run_interface(self, runtime: Bunch) -> Bunch:
+        """Instantiation of abstract method, does nothing
+
+        Args:
+            runtime: Nipype runtime object
+
+        Returns:
+            runtime: Resultant runtime object (unchanged)
+
+        """
+        return runtime
+
+    def _generate_report(self):
+
+        data = _make_3d_from_4d(nilearn.image.load(self.inputs.nii))
+        bbox_nii = nilearn.image.threshold_img(data, 1e-3)
+        cuts = cuts_from_bbox(bbox_nii, cuts=7)
+
+        svgs = []
+        for d in ("z", "x", "y"):
+            plot_params = {"display_mode": d, "cut_coords": cuts[d]}
+            display = nplot.plot_epi(data, **plot_params)
+            svg = extract_svg(display)
+            svg = svg.replace("figure_1", f"functional-{d}")
+            svgs.append(fromstring(svg))
+            display.close()
+
+        compose_view(svgs, fg_svgs=None, out_file=self._out_report)
 
 
 class _IRegInputSpecRPT(nrc._SVGReportCapableInputSpec):
@@ -541,7 +640,8 @@ class _ISurfMapInputSpecRPT(nrc._SVGReportCapableInputSpec):
                              desc="Colormap to use to plot mapping",
                              mandatory=False)
 
-    views = traits.List([{
+    views = traits.List(
+        [{
             "view": "lateral",
             "hemi": "left"
         }, {
@@ -785,6 +885,7 @@ def _parcel2segs(parcellation):
 
 
 # Register interfaces with adapter-factory
+# TODO: Automate registration via using plugins pattern
 def _run_imports() -> None:
     register_interface(IRegRPT, 'registration')
     register_interface(ISegRPT, 'segmentation')
@@ -793,3 +894,5 @@ def _run_imports() -> None:
     register_interface(ISurfMapRPT, 'surface')
     register_interface(IFreesurferVolParcellationRPT,
                        'freesurfer_parcellation')
+    register_interface(IAnatRPT, 'anatomical')
+    register_interface(IFuncRPT, 'functional')
