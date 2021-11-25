@@ -642,6 +642,10 @@ class ISurfMapRPT(reporting.ReportCapableInterface):
             lv, lt, lm = niviz.surface.map_cifti_to_gifti(l_surf, cifti_map)
             rv, rt, rm = niviz.surface.map_cifti_to_gifti(r_surf, cifti_map)
 
+            if lm.ndim == 1:
+                lm = lm[None, :]
+                rm = rm[None, :]
+
             if not self._visualize_all_maps:
                 lm = lm[0, :]
                 rm = rm[0, :]
@@ -672,19 +676,26 @@ class ISurfMapRPT(reporting.ReportCapableInterface):
                                 figsize=(w, h))
         fig.set_facecolor("black")
         fig.tight_layout()
+
+
         for i, a in enumerate(axs.flat):
             a.set_facecolor("black")
 
-            view = self._views[i]["view"]
-            hemi = self._views[i]["hemi"]
+            view_ind = i % num_views
+            map_ind = i // num_views
+
+            view = self._views[view_ind]["view"]
+            hemi = self._views[view_ind]["hemi"]
 
             display_map = getattr(map_hemi, hemi)
             display_bg = getattr(bg_hemi, hemi)
 
-            # Plot
             v, t, m = display_map
+            m = m[map_ind]
             if self._zero_nan:
                 m[np.isnan(m)] = 0
+
+            # Plot
             nplot.plot_surf([v, t],
                             surf_map=m,
                             bg_map=display_bg,
