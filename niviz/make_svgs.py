@@ -46,6 +46,9 @@ def svg_util(args):
         (n := niviz.node_factory.get_interface(a, out_path))
         is not None]
 
+    if args.nthreads == 1:
+        [_mksvg(i) for i in interfaces]
+
     with Pool(processes=args.nthreads) as pool:
         pool.map(_mksvg, interfaces)
 
@@ -108,7 +111,9 @@ def cli():
                             const=1,
                             help="Number of threads to parallelize across")
     parser_svg.add_argument("--rewrite",
-                            help="Overwrite existing SVG files")
+                            help="Overwrite existing SVG files",
+                            nargs="?",
+                            action="store_true")
     parser_svg.set_defaults(func=svg_util)
 
     parser_report = sub_parsers.add_parser('report',
