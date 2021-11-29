@@ -112,7 +112,6 @@ def cli():
                             help="Number of threads to parallelize across")
     parser_svg.add_argument("--rewrite",
                             help="Overwrite existing SVG files",
-                            nargs="?",
                             action="store_true")
     parser_svg.set_defaults(func=svg_util)
 
