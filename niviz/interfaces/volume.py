@@ -15,7 +15,8 @@ from niworkflows.viz.utils import (cuts_from_bbox, compose_view, extract_svg,
                                    robust_set_limits)
 import niworkflows.interfaces.report_base as nrc
 
-from ..node_factory import register_interface
+from niviz.interfaces.mixins import IdentityRPTMixin
+from niviz.node_factory import register_interface
 """
 ReportCapable concrete classes for generating reports as side-effects
 """
@@ -48,22 +49,10 @@ class _IAnatOutputSpecRPT(reporting.ReportCapableOutputSpec):
     pass
 
 
-class IAnatRPT(reporting.ReportCapableInterface):
+class IAnatRPT(IdentityRPTMixin):
 
     input_spec = _IAnatInputSpecRPT
     output_spec = _IAnatOutputSpecRPT
-
-    def _run_interface(self, runtime: Bunch) -> Bunch:
-        """Instantiation of abstract method, does nothing
-
-        Args:
-            runtime: Nipype runtime object
-
-        Returns:
-            runtime: Resultant runtime object (unchanged)
-
-        """
-        return runtime
 
     def _generate_report(self):
 
@@ -112,22 +101,10 @@ class _IFuncOutputSpecRPT(reporting.ReportCapableOutputSpec):
     pass
 
 
-class IFuncRPT(reporting.ReportCapableInterface):
+class IFuncRPT(IdentityRPTMixin):
 
     input_spec = _IFuncInputSpecRPT
     output_spec = _IFuncOutputSpecRPT
-
-    def _run_interface(self, runtime: Bunch) -> Bunch:
-        """Instantiation of abstract method, does nothing
-
-        Args:
-            runtime: Nipype runtime object
-
-        Returns:
-            runtime: Resultant runtime object (unchanged)
-
-        """
-        return runtime
 
     def _generate_report(self):
 
@@ -172,7 +149,7 @@ class _IRegOutputSpecRPT(reporting.ReportCapableOutputSpec):
     pass
 
 
-class IRegRPT(nrc.RegistrationRC):
+class IRegRPT(IdentityRPTMixin, nrc.RegistrationRC):
     """Implementation of Identity operation on RegistrationRC
 
     This class performs no operations and generates a report
@@ -209,23 +186,8 @@ class IRegRPT(nrc.RegistrationRC):
 
         return super(IRegRPT, self)._post_run_hook(runtime)
 
-    def _run_interface(self, runtime: Bunch) -> Bunch:
-        """Main function of IRegRPT, does nothing.
 
-        Implements identity operation. IRegRPT expects
-        fully registered inputs, so no operations are performed.
-
-        Args:
-            runtime: Nipype runtime object
-
-        Returns:
-            runtime: Resultant runtime object (unchanged)
-
-        """
-        return runtime
-
-
-class _ISegInputSpecRPT(nrc._SVGReportCapableInputSpec):
+class _ISegInputSpecRPT(IdentityRPTMixin, nrc._SVGReportCapableInputSpec):
     '''
     Input specification for ISegRPT, implements:
 
@@ -306,21 +268,6 @@ class ISegRPT(nrc.SegmentationRC):
         # Propogate to superclass
         return super(ISegRPT, self)._post_run_hook(runtime)
 
-    def _run_interface(self, runtime: Bunch) -> Bunch:
-        """Main function of ISegRPT, does nothing.
-
-        Implements identity operation. ISegRPT expects
-        fully registered inputs, so no operations are performed.
-
-        Args:
-            runtime: Nipype runtime object
-
-        Returns:
-            runtime: Resultant runtime object (unchanged)
-
-        """
-        return runtime
-
 
 def _make_3d_from_4d(nii: Nifti1Image, ind: int = 0) -> Nifti1Image:
     '''
@@ -357,7 +304,6 @@ def _reorient_to_ras(img: Nifti1Image) -> Nifti1Image:
     return img.as_reoriented(img2ref)
 
 
-# Register interfaces with adapter-factory
 # TODO: Automate registration via using plugins pattern
 def _run_imports() -> None:
     register_interface(IRegRPT, 'registration')

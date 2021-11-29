@@ -3,6 +3,7 @@ Module containing common Mixin classes
 '''
 
 from __future__ import annotations
+from typing import TYPE_CHECKING
 
 import numpy as np
 
@@ -10,6 +11,26 @@ import nilearn.image as nimg
 from nipype.interfaces.mixins import reporting
 from nipype.interfaces.base import File
 import niworkflows.interfaces.report_base as nrc
+
+if TYPE_CHECKING:
+    from nipype.interfaces.base.support import Bunch
+
+
+class IdentityRPT(reporting.ReportCapableInterface):
+    '''
+    Simple mixin class to implement an Identity node
+    '''
+    def _run_interface(self, runtime: Bunch) -> Bunch:
+        """Instantiation of abstract method, does nothing
+
+        Args:
+            runtime: Nipype runtime object
+
+        Returns:
+            runtime: Resultant runtime object (unchanged)
+
+        """
+        return runtime
 
 
 class _ParcellationInputSpecRPT(nrc._SVGReportCapableInputSpec):

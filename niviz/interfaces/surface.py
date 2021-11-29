@@ -15,7 +15,8 @@ from nipype.interfaces.base import File, traits
 import niworkflows.interfaces.report_base as nrc
 from niworkflows.viz.utils import cuts_from_bbox
 
-from ..node_factory import register_interface
+from niviz.node_factory import register_interface
+from niviz.interfaces.mixins import IdentityRPTMixin
 import niviz.surface
 
 if TYPE_CHECKING:
@@ -95,7 +96,7 @@ class _ISurfMapOutputSpecRPT(reporting.ReportCapableOutputSpec):
     pass
 
 
-class ISurfMapRPT(reporting.ReportCapableInterface):
+class ISurfMapRPT(IdentityRPTMixin):
     '''
     Class for generating Niviz surface visualizations given
     a mesh and surface mapping
@@ -103,18 +104,6 @@ class ISurfMapRPT(reporting.ReportCapableInterface):
 
     input_spec = _ISurfMapInputSpecRPT
     output_spec = _ISurfMapOutputSpecRPT
-
-    def _run_interface(self, runtime: Bunch) -> Bunch:
-        """Instantiation of abstract method, does nothing
-
-        Args:
-            runtime: Nipype runtime object
-
-        Returns:
-            runtime: Resultant runtime object (unchanged)
-
-        """
-        return runtime
 
     def _post_run_hook(self, runtime: Bunch) -> Bunch:
         self._left_surf = self.inputs.left_surf
@@ -260,7 +249,7 @@ class _ISurfVolOutputSpecRPT(reporting.ReportCapableOutputSpec):
     pass
 
 
-class SurfVolRC(reporting.ReportCapableInterface):
+class SurfVolRC(IdentityRPTMixin):
     '''
     Abstract mixin for surface-volume coregistered images
     '''
@@ -284,9 +273,6 @@ class ISurfVolRPT(SurfVolRC):
 
         # Propogate to superclass
         return super(ISurfVolRPT, self)._post_run_hook(runtime)
-
-    def _run_interface(self, runtime):
-        return runtime
 
     def _generate_report(self):
         '''Make a composite for co-registration of surface and volume images'''

@@ -12,7 +12,8 @@ from nipype.interfaces.base import File, Directory
 import niworkflows.interfaces.report_base as nrc
 
 from ..node_factory import register_interface
-from niviz.interfaces.mixins import ParcellationRC, _ParcellationInputSpecRPT
+from niviz.interfaces.mixins import (ParcellationRC, _ParcellationInputSpecRPT,
+                                     IdentityRPT)
 
 if TYPE_CHECKING:
     from nipype.interfaces.base.support import Bunch
@@ -45,7 +46,7 @@ class _IFSCoregOutputSpecRPT(reporting.ReportCapableOutputSpec):
     pass
 
 
-class IFSCoregRPT(nrc.RegistrationRC):
+class IFSCoregRPT(IdentityRPT, nrc.RegistrationRC):
 
     input_spec = _IFSCoregInputSpecRPT
     output_spec = _IFSCoregOutputSpecRPT
@@ -68,21 +69,6 @@ class IFSCoregRPT(nrc.RegistrationRC):
         self._contour = os.path.join(self.inputs.fs_dir, 'mri', 'ribbon.mgz')
 
         return super(IFSCoregRPT, self)._post_run_hook(runtime)
-
-    def _run_interface(self, runtime: Bunch) -> Bunch:
-        """Does nothing.
-
-        Implements identity operation. IFSCoregRPT expects
-        fully registered inputs, so no operations are performed.
-
-        Args:
-            runtime: Nipype runtime object
-
-        Returns:
-            runtime: Resultant runtime object (unchanged)
-
-        """
-        return runtime
 
 
 class _IFreesurferVolParcellationInputSpecRPT(_ParcellationInputSpecRPT,
@@ -110,9 +96,6 @@ class IFreesurferVolParcellationRPT(ParcellationRC):
 
     input_spec = _IFreesurferVolParcellationInputSpecRPT
     output_spec = _IFreesurferVolParcellationOutputSpecRPT
-
-    def _run_interface(self, runtime: Bunch) -> Bunch:
-        return runtime
 
     def _post_run_hook(self, runtime: Bunch) -> Bunch:
 
