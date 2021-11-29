@@ -15,7 +15,7 @@ from niworkflows.viz.utils import (cuts_from_bbox, compose_view, extract_svg,
                                    robust_set_limits)
 import niworkflows.interfaces.report_base as nrc
 
-from niviz.interfaces.mixins import IdentityRPTMixin
+from niviz.interfaces.mixins import IdentityRPT
 from niviz.node_factory import register_interface
 """
 ReportCapable concrete classes for generating reports as side-effects
@@ -49,7 +49,7 @@ class _IAnatOutputSpecRPT(reporting.ReportCapableOutputSpec):
     pass
 
 
-class IAnatRPT(IdentityRPTMixin):
+class IAnatRPT(IdentityRPT):
 
     input_spec = _IAnatInputSpecRPT
     output_spec = _IAnatOutputSpecRPT
@@ -101,7 +101,7 @@ class _IFuncOutputSpecRPT(reporting.ReportCapableOutputSpec):
     pass
 
 
-class IFuncRPT(IdentityRPTMixin):
+class IFuncRPT(IdentityRPT):
 
     input_spec = _IFuncInputSpecRPT
     output_spec = _IFuncOutputSpecRPT
@@ -149,7 +149,7 @@ class _IRegOutputSpecRPT(reporting.ReportCapableOutputSpec):
     pass
 
 
-class IRegRPT(IdentityRPTMixin, nrc.RegistrationRC):
+class IRegRPT(IdentityRPT, nrc.RegistrationRC):
     """Implementation of Identity operation on RegistrationRC
 
     This class performs no operations and generates a report
@@ -187,7 +187,7 @@ class IRegRPT(IdentityRPTMixin, nrc.RegistrationRC):
         return super(IRegRPT, self)._post_run_hook(runtime)
 
 
-class _ISegInputSpecRPT(IdentityRPTMixin, nrc._SVGReportCapableInputSpec):
+class _ISegInputSpecRPT(IdentityRPT, nrc._SVGReportCapableInputSpec):
     '''
     Input specification for ISegRPT, implements:
 

@@ -16,7 +16,7 @@ import niworkflows.interfaces.report_base as nrc
 from niworkflows.viz.utils import cuts_from_bbox
 
 from niviz.node_factory import register_interface
-from niviz.interfaces.mixins import IdentityRPTMixin
+from niviz.interfaces.mixins import IdentityRPT
 import niviz.surface
 
 if TYPE_CHECKING:
@@ -96,7 +96,7 @@ class _ISurfMapOutputSpecRPT(reporting.ReportCapableOutputSpec):
     pass
 
 
-class ISurfMapRPT(IdentityRPTMixin):
+class ISurfMapRPT(IdentityRPT):
     '''
     Class for generating Niviz surface visualizations given
     a mesh and surface mapping
@@ -249,7 +249,7 @@ class _ISurfVolOutputSpecRPT(reporting.ReportCapableOutputSpec):
     pass
 
 
-class SurfVolRC(IdentityRPTMixin):
+class SurfVolRC(IdentityRPT):
     '''
     Abstract mixin for surface-volume coregistered images
     '''
