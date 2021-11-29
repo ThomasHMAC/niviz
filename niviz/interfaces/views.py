@@ -13,7 +13,8 @@ import niworkflows.interfaces.report_base as nrc
 from nipype.interfaces.base import File, traits, InputMultiPath, Directory
 from traits.trait_types import BaseInt
 from nipype.interfaces.mixins import reporting
-from niworkflows.viz.utils import cuts_from_bbox, compose_view, extract_svg
+from niworkflows.viz.utils import (cuts_from_bbox, compose_view, extract_svg,
+                                   robust_set_limits)
 
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
@@ -33,7 +34,7 @@ ReportCapable concrete classes for generating reports as side-effects
 if TYPE_CHECKING:
     from nipype.interfaces.base.support import Bunch
 
-# TODO: Create Identity Mixin
+# TODO: Create Identity base class
 
 
 # Basic set of visualizations
@@ -43,6 +44,14 @@ class _IAnatInputSpecRPT(nrc._SVGReportCapableInputSpec):
                resolve=True,
                desc="Anatomical Image to view",
                mandatory=True)
+
+    n_cuts = BaseInt(10, desc="Number of cuts for each axis", usedefault=True)
+
+    display_modes = traits.List(
+        ['x', 'y', 'z'],
+        usedefault=True,
+        desc="Slicing axis to view",
+        inner_traits=traits.Enum(values=['x', 'y', 'z']))
 
 
 class _IAnatOutputSpecRPT(reporting.ReportCapableOutputSpec):
@@ -68,13 +77,22 @@ class IAnatRPT(reporting.ReportCapableInterface):
 
     def _generate_report(self):
 
-        data = nilearn.image.load(self.inputs.nii)
+        data = nilearn.image.load_img(self.inputs.nii)
+
+        if len(data.shape) == 4:
+            data = _make_3d_from_4d(data)
+
         bbox_nii = nilearn.image.threshold_img(data, 1e-3)
-        cuts = cuts_from_bbox(bbox_nii, cuts=7)
+        cuts = cuts_from_bbox(bbox_nii, cuts=self.inputs.n_cuts)
+        robust_params = robust_set_limits(data.get_fdata().reshape(-1), {})
 
         svgs = []
-        for d in ("z", "x", "y"):
-            plot_params = {"display_mode": d, "cut_coords": cuts[d]}
+        for d in self.inputs.display_modes:
+            plot_params = {
+                "display_mode": d,
+                "cut_coords": cuts[d],
+                **robust_params
+            }
             display = nplot.plot_anat(data, **plot_params)
             svg = extract_svg(display)
             svg = svg.replace("figure_1", f"anatomical-{d}")
@@ -90,6 +108,14 @@ class _IFuncInputSpecRPT(nrc._SVGReportCapableInputSpec):
                resolve=True,
                desc="Functional Image to view",
                mandatory=True)
+
+    n_cuts = BaseInt(10, desc="Number of cuts for each axis", usedefault=True)
+
+    display_modes = traits.List(
+        ['x', 'y', 'z'],
+        usedefault=True,
+        desc="Slicing axis to view",
+        inner_traits=traits.Enum(values=['x', 'y', 'z']))
 
 
 class _IFuncOutputSpecRPT(reporting.ReportCapableOutputSpec):
@@ -115,12 +141,12 @@ class IFuncRPT(reporting.ReportCapableInterface):
 
     def _generate_report(self):
 
-        data = _make_3d_from_4d(nilearn.image.load(self.inputs.nii))
+        data = _make_3d_from_4d(nilearn.image.load_img(self.inputs.nii))
         bbox_nii = nilearn.image.threshold_img(data, 1e-3)
-        cuts = cuts_from_bbox(bbox_nii, cuts=7)
+        cuts = cuts_from_bbox(bbox_nii, cuts=self.inputs.n_cuts)
 
         svgs = []
-        for d in ("z", "x", "y"):
+        for d in self.inputs.display_modes:
             plot_params = {"display_mode": d, "cut_coords": cuts[d]}
             display = nplot.plot_epi(data, **plot_params)
             svg = extract_svg(display)
@@ -776,7 +802,6 @@ class ISurfMapRPT(reporting.ReportCapableInterface):
                                 figsize=(w, h))
         fig.set_facecolor("black")
         fig.tight_layout()
-
 
         for i, a in enumerate(axs.flat):
             a.set_facecolor("black")
