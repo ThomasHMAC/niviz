@@ -4,19 +4,17 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from svgutils.transform import fromstring
 from traits.trait_types import BaseInt
 import nilearn.image as nimg
-import nilearn.plotting as nplot
 import nibabel as nib
 from nipype.interfaces.base import File, traits, InputMultiPath
 from nipype.interfaces.mixins import reporting
-from niworkflows.viz.utils import (cuts_from_bbox, compose_view, extract_svg,
-                                   robust_set_limits)
+from niworkflows.viz.utils import compose_view
 import niworkflows.interfaces.report_base as nrc
 
 from niviz.interfaces.mixins import IdentityRPT
 from niviz.node_factory import register_interface
+import niviz.common.plot as nvzplot
 """
 ReportCapable concrete classes for generating reports as side-effects
 """
@@ -25,11 +23,55 @@ if TYPE_CHECKING:
     from nipype.interfaces.base.support import Bunch
     from nibabel.nifti1 import Nifti1Image
 
-# TODO: Create Identity base class
+
+class _IMontageInputSpecRPT(nrc._SVGReportCapableInputSpec):
+    nii = File(exists=True,
+               usedefault=False,
+               resolve=True,
+               desc="Anatomical Image to view",
+               mandatory=True)
+
+    orientation = traits.Enum("x",
+                              "y",
+                              "z",
+                              usedefault=False,
+                              desc="Orientation to display for montage",
+                              mandatory=True)
+
+    n_cuts = BaseInt(50, desc="Number of cuts to display", usedefault=True)
+    n_cols = BaseInt(10,
+                     desc="Maximum number of columns in montage",
+                     usedefault=True)
+
+
+class _IMontageOutputSpecRPT(reporting.ReportCapableOutputSpec):
+    pass
+
+
+class IMontageRPT(IdentityRPT):
+
+    input_spec = _IMontageInputSpecRPT
+    output_spec = _IMontageOutputSpecRPT
+
+    def _generate_report(self):
+
+        data = nimg.load_img(self.inputs.nii)
+
+        if len(data.shape) == 4:
+            data = _make_3d_from_4d(data)
+
+        compose_view(nvzplot.plot_montage(data,
+                                          self.inputs.orientation,
+                                          n_cuts=self.inputs.n_cuts,
+                                          n_cols=self.inputs.n_cols,
+                                          auto_brightness=True,
+                                          figure_title="anatomical"),
+                     fg_svgs=None,
+                     out_file=self._out_report)
 
 
 # Basic set of visualizations
-class _IAnatInputSpecRPT(nrc._SVGReportCapableInputSpec):
+class _IOrthoInputSpecRPT(nrc._SVGReportCapableInputSpec):
     nii = File(exists=True,
                usedefault=False,
                resolve=True,
@@ -45,14 +87,14 @@ class _IAnatInputSpecRPT(nrc._SVGReportCapableInputSpec):
         inner_traits=traits.Enum(values=['x', 'y', 'z']))
 
 
-class _IAnatOutputSpecRPT(reporting.ReportCapableOutputSpec):
+class _IOrthoOutputSpecRPT(reporting.ReportCapableOutputSpec):
     pass
 
 
-class IAnatRPT(IdentityRPT):
+class IOrthoRPT(IdentityRPT):
 
-    input_spec = _IAnatInputSpecRPT
-    output_spec = _IAnatOutputSpecRPT
+    input_spec = _IOrthoInputSpecRPT
+    output_spec = _IOrthoOutputSpecRPT
 
     def _generate_report(self):
 
@@ -61,67 +103,14 @@ class IAnatRPT(IdentityRPT):
         if len(data.shape) == 4:
             data = _make_3d_from_4d(data)
 
-        bbox_nii = nimg.threshold_img(data, 1e-3)
-        cuts = cuts_from_bbox(bbox_nii, cuts=self.inputs.n_cuts)
-        robust_params = robust_set_limits(data.get_fdata().reshape(-1), {})
-
-        svgs = []
-        for d in self.inputs.display_modes:
-            plot_params = {
-                "display_mode": d,
-                "cut_coords": cuts[d],
-                **robust_params
-            }
-            display = nplot.plot_anat(data, **plot_params)
-            svg = extract_svg(display)
-            svg = svg.replace("figure_1", f"anatomical-{d}")
-            svgs.append(fromstring(svg))
-            display.close()
-
-        compose_view(svgs, fg_svgs=None, out_file=self._out_report)
-
-
-class _IFuncInputSpecRPT(nrc._SVGReportCapableInputSpec):
-    nii = File(exists=True,
-               usedefault=False,
-               resolve=True,
-               desc="Functional Image to view",
-               mandatory=True)
-
-    n_cuts = BaseInt(10, desc="Number of cuts for each axis", usedefault=True)
-
-    display_modes = traits.List(
-        ['x', 'y', 'z'],
-        usedefault=True,
-        desc="Slicing axis to view",
-        inner_traits=traits.Enum(values=['x', 'y', 'z']))
-
-
-class _IFuncOutputSpecRPT(reporting.ReportCapableOutputSpec):
-    pass
-
-
-class IFuncRPT(IdentityRPT):
-
-    input_spec = _IFuncInputSpecRPT
-    output_spec = _IFuncOutputSpecRPT
-
-    def _generate_report(self):
-
-        data = _make_3d_from_4d(nimg.load_img(self.inputs.nii))
-        bbox_nii = nimg.threshold_img(data, 1e-3)
-        cuts = cuts_from_bbox(bbox_nii, cuts=self.inputs.n_cuts)
-
-        svgs = []
-        for d in self.inputs.display_modes:
-            plot_params = {"display_mode": d, "cut_coords": cuts[d]}
-            display = nplot.plot_epi(data, **plot_params)
-            svg = extract_svg(display)
-            svg = svg.replace("figure_1", f"functional-{d}")
-            svgs.append(fromstring(svg))
-            display.close()
-
-        compose_view(svgs, fg_svgs=None, out_file=self._out_report)
+        compose_view(nvzplot.plot_orthogonal_views(
+            data,
+            auto_brightness=True,
+            display_modes=self.inputs.display_modes,
+            n_cuts=self.inputs.n_cuts,
+            figure_title="anatomical"),
+                     fg_svgs=None,
+                     out_file=self._out_report)
 
 
 class _IRegInputSpecRPT(nrc._SVGReportCapableInputSpec):
@@ -304,9 +293,8 @@ def _reorient_to_ras(img: Nifti1Image) -> Nifti1Image:
     return img.as_reoriented(img2ref)
 
 
-# TODO: Automate registration via using plugins pattern
 def _run_imports() -> None:
     register_interface(IRegRPT, 'registration')
     register_interface(ISegRPT, 'segmentation')
-    register_interface(IAnatRPT, 'anatomical')
-    register_interface(IFuncRPT, 'functional')
+    register_interface(IOrthoRPT, 'orthogonal')
+    register_interface(IMontageRPT, 'montage')
