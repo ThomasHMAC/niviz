@@ -11,6 +11,8 @@ from typing import TYPE_CHECKING, Optional, Union
 if TYPE_CHECKING:
     from nipype.interfaces.mixins import reporting
 
+import importlib
+import pkgutil
 import os
 from pathlib import Path
 from string import Template
@@ -107,10 +109,10 @@ class RPTFactory(object):
         self._interfaces = {}
 
     def get_interface(
-        self,
-        spec: ArgInputSpec,
-        out_path: Union[str, Path],
-        make_dirs: Optional[bool] = False
+            self,
+            spec: ArgInputSpec,
+            out_path: Union[str, Path],
+            make_dirs: Optional[bool] = False
     ) -> reporting.ReportCapableInterface:
         '''
         Retrieve and configure interface from registered list
@@ -225,8 +227,18 @@ def get_interface(
 
 # Avoid circular import problem
 def initialize_defaults():
-    import niviz.interfaces.views
-    niviz.interfaces.views._run_imports()
+    '''
+    Discovers modules within niviz.interfaces that
+    implement _run_imports and registers it to the
+    node factory
+    '''
+    import niviz.interfaces
+    for loader, name, ispkg in pkgutil.walk_packages(
+            niviz.interfaces.__path__):
+        full_name = niviz.interfaces.__name__ + '.' + name
+        module = importlib.import_module(full_name)
+        if hasattr(module, '_run_imports'):
+            module._run_imports()
 
 
 initialize_defaults()

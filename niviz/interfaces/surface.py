@@ -10,7 +10,8 @@ import nibabel as nib
 import nilearn.image as nimg
 import nilearn.plotting as nplot
 from nipype.interfaces.mixins import reporting
-from nipype.interfaces.base import File, traits, BaseInt
+from traits.trait_types import BaseInt
+from nipype.interfaces.base import File, traits
 import niworkflows.interfaces.report_base as nrc
 from niworkflows.viz.utils import cuts_from_bbox
 
