@@ -22,7 +22,6 @@ jobs:
     name: Construct sphinx version docs
     runs-on: ubuntu-latest
     steps:
-
       - name: Checkout code
         uses: actions/checkout@v2
 
@@ -102,7 +101,7 @@ jobs:
 
       # When dev push
       - name: Publish dev documentation
-        if: github.event_name == 'push'
+        if: ${{ github.event_name == 'push' && !env.ACT }}
         uses: JamesIves/github-pages-deploy-action@3.7.1
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
