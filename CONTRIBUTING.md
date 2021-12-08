@@ -74,7 +74,7 @@ In order to ensure consistent code formatting we use a number of tools to help u
 
 - [flake8](https://github.com/PyCQA/flake8) - enforce adherence to the [PEP8 Style Guide](https://www.python.org/dev/peps/pep-0008/)
 - [yapf](https://github.com/google/yapf) - python code formatter, can be run within your editor or through command-line
-- Use [google-style docstrings]()https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html in *all your code*! 
+- Use [google-style docstrings](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html) in *all your code*! 
 
 
 ### Pull Requests
@@ -82,13 +82,13 @@ In order to ensure consistent code formatting we use a number of tools to help u
 Pull Requests are the standard way to contribute code changes to open source projects. When submitting a pull request please ensure the following:
 
 1. You have a clear descriptive title of what your PR entails. Please use the following title prefixes when submitting a PR
-	1. MAINT: <TITLE> - when contribution is related to maintenance (i.e CI, packaging)
-	2. ENH: <TITLE> - when contribution is adding a feature enhancement
-	3. FIX: <TITLE> - when contribution is fixing broken behaviour (i.e bug squashing)
-	4. DOCS: <TITLE> - when contribution is solely modifying documentation (i.e writing tutorials, configuration for docs)
-	5. TST: <TITLE> - when contribution is solely related to updating testing code
-	6. STY: <TITLE> - when contribution consists of only updating code style. No behaviour changes in code should occur!
-	7. REF: <TITLE> - when contribution is solely refactoring. No new features should be added
+	1. `MAINT`: <TITLE> - when contribution is related to maintenance (i.e CI, packaging)
+	2. `ENH`: <TITLE> - when contribution is adding a feature enhancement
+	3. `FIX`: <TITLE> - when contribution is fixing broken behaviour (i.e bug squashing)
+	4. `DOCS`: <TITLE> - when contribution is solely modifying documentation (i.e writing tutorials, configuration for docs)
+	5. `TST`: <TITLE> - when contribution is solely related to updating testing code
+	6. `STY`: <TITLE> - when contribution consists of only updating code style. No behaviour changes in code should occur!
+	7. `REF`: <TITLE> - when contribution is solely refactoring. No new features should be added
 2. You reference an issue that is being resolved by the PR
 3. Reference the issue being resolved in your PR, this can be done by writing in your PR a line that says "Resolves #<ISSUE NUBER". GitHub will auto-associate the PR with the provided issue
 4. You have a clean, concise, and readable commit history. If your commit history is a bit messy, no problem! Use [git rebase](https://www.git-tower.com/learn/git/faq/git-squash) to re-format your commits into something cleaner
