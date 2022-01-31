@@ -24,6 +24,37 @@ def _mksvg(interface):
     interface.run()
 
 
+def _parse_var(s):
+    key, value = [i.strip() for i in s.split("=")]
+    return (key, value)
+
+
+def _parse_vars(items):
+    if items:
+        return dict(_parse_var(item) for item in items)
+    return {}
+
+
+def single_image_util(args):
+    '''
+    Single image utility
+    '''
+
+    from niviz.node_factory import get_interface, ArgInputSpec
+
+    out_path = args.out_svg
+    specs = _parse_vars(args.set)
+    spec = ArgInputSpec(name="single_image",
+                        method=args.method,
+                        bids_entities={},
+                        interface_args=specs,
+                        out_spec=out_path)
+    interface = get_interface(spec=spec,
+                              out_path=os.path.dirname(out_path),
+                              make_dirs=False)
+    interface.run()
+
+
 def svg_util(args):
     '''
     SVG sub-command
@@ -41,10 +72,11 @@ def svg_util(args):
             if not os.path.exists(os.path.join(out_path, a._out_spec))
         ]
 
-    interfaces = [
-        n for a in arg_specs if
-        (n := niviz.node_factory.get_interface(a, out_path))
-        is not None]
+    interfaces = []
+    for a in arg_specs:
+        node = niviz.node_factory.get_interface(a, out_path)
+        if node is not None:
+            interfaces.append(node)
 
     if args.nthreads == 1:
         [_mksvg(i) for i in interfaces]
@@ -127,6 +159,23 @@ def cli():
     parser_report.add_argument('--subjects',
                                nargs='+',
                                help='List of subjects to generate reports for')
+
+    parser_single = sub_parsers.add_parser('single',
+                                           help='Generate single QC image')
+
+    parser_single.set_defaults(func=single_image_util)
+    parser_single.add_argument('method',
+                               type=str,
+                               help='Method to use to generate QC image')
+    parser_single.add_argument('out_svg',
+                               type=str,
+                               help="Path to output SVG image")
+    parser_single.add_argument('--set',
+                               metavar='KEY=VALUE',
+                               action='append',
+                               help='Set a number of key-value pairs '
+                               'to method arguments.')
+
     p.set_defaults(func=report_util)
     args = p.parse_args()
     args.func(args)
