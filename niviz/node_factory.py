@@ -207,6 +207,10 @@ def register_interface(rpt_interface: reporting.ReportCapableInterface,
     factory.register_interface(rpt_interface, method)
 
 
+def view_interfaces():
+    return factory.view_interfaces()
+
+
 def get_interface(
         spec: ArgInputSpec,
         out_path: Union[str, Path],
