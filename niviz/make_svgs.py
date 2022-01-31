@@ -172,9 +172,9 @@ def cli():
                                help="Path to output SVG image")
     parser_single.add_argument('--set',
                                metavar='KEY=VALUE',
-                               nargs="+",
-                               help="Set a number of key-value pairs "
-                               "to method arguments.")
+                               nargs='+',
+                               help='Set a number of key-value pairs '
+                               'to method arguments.')
 
     p.set_defaults(func=report_util)
     args = p.parse_args()
