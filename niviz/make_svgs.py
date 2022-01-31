@@ -172,7 +172,7 @@ def cli():
                                help="Path to output SVG image")
     parser_single.add_argument('--set',
                                metavar='KEY=VALUE',
-                               nargs='+',
+                               action='append',
                                help='Set a number of key-value pairs '
                                'to method arguments.')
 
