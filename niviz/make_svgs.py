@@ -35,6 +35,28 @@ def _parse_vars(items):
     return {}
 
 
+def info_util(args):
+    from niviz.node_factory import view_interfaces
+
+    interface_map = view_interfaces()
+    display_interfaces = args.list_interfaces
+
+    if args.get_info:
+        try:
+            interface = interface_map[args.get_info]
+        except KeyError:
+            print("Valid interface not provided")
+            print("Showing available interfaces")
+            display_interfaces = True
+        else:
+            interface.help()
+
+    if display_interfaces:
+        print("Interface:\tNiviz Class")
+        for k, v in interface_map.items():
+            print(f"{k}:\t{v}")
+
+
 def single_image_util(args):
     '''
     Single image utility
@@ -126,6 +148,18 @@ def cli():
         'QC images from pipeline outputs')
 
     sub_parsers = p.add_subparsers(help='Niviz command modes')
+
+    parser_info = sub_parsers.add_parser('info',
+                                         help='Get Niviz interface info')
+    parser_info.set_defaults(func=info_util)
+    group = parser_info.add_mutually_exclusive_group()
+    group.add_argument('--list-interfaces',
+                       action='store_true',
+                       help="List all registered interfaces")
+    group.add_argument('--get-info',
+                       metavar='INTERFACE',
+                       type=str,
+                       help='Get interface arguments')
 
     parser_svg = sub_parsers.add_parser('svg', help='SVG Generation utility')
     parser_svg.add_argument('base_path',
