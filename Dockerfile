@@ -9,4 +9,4 @@ RUN pip install -r requirements.txt
 COPY . .
 RUN pip install -e . --use-deprecated=legacy-resolver
 
-ENTRYPOINT ["/bin/bash"]
+ENTRYPOINT ["python", "/niviz/niviz/make_svgs.py"]
